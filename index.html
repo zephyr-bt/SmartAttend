@@ -145,8 +145,8 @@
             </div>
 
             <div class="glass-card p-8 rounded-[2.5rem] text-center">
-                <h3 class="font-display font-black text-xl text-slate-800">You're all caught up!</h3>
-                <p class="text-sm text-slate-500 mt-2">Check back tomorrow for the next attendance session.</p>
+                <h3 class="font-display font-black text-xl text-slate-800">Status Check</h3>
+                <p id="cooldownStatus" class="text-sm text-slate-500 mt-2">Checking your daily attendance record...</p>
             </div>
         </section>
     </main>
@@ -172,7 +172,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        // Added getDocs and deleteDoc for the ZIP Reset feature
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -228,6 +227,7 @@
                         initTeacher();
                     } else {
                         document.getElementById('studentView').classList.remove('hidden');
+                        checkCooldownStatus();
                     }
                 } else {
                     document.getElementById('loginView').classList.add('hidden');
@@ -281,10 +281,10 @@
             }
         };
 
-        // --- TEACHER LOGIC (REVISED) ---
+        // --- TEACHER LOGIC ---
         window.handleSession = async () => {
             const btn = document.getElementById('sessionToggle');
-            const sessionRef = doc(db, "sessions", "daily_attendance"); // Only ONE global session
+            const sessionRef = doc(db, "sessions", "daily_attendance"); 
             
             if (btn.innerText.includes("Initialize")) {
                 let rLeft = 10;
@@ -295,7 +295,6 @@
                 document.getElementById('timerContainer').classList.remove('hidden');
                 document.getElementById('mainDisplayCode').classList.remove('opacity-30');
 
-                // Runs infinitely until ended manually
                 masterInterval = setInterval(async () => {
                     if (rLeft >= 10) {
                         const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -312,13 +311,12 @@
                 }, 1000);
 
             } else {
-                // END SESSION & SAVE LOGIC
+                // END SESSION & SAVE ZIP
                 clearInterval(masterInterval);
                 await updateDoc(sessionRef, { active: false });
                 
                 showToast("Compiling ZIP File...", false);
 
-                // Fetch Attendance and Compile CSV
                 const attSnap = await getDocs(collection(db, "attendance"));
                 let csvContent = "Student Name, Verification Time\n";
                 
@@ -328,7 +326,6 @@
                     csvContent += `${data.studentName},${timestamp}\n`;
                 });
 
-                // Generate ZIP
                 const zip = new JSZip();
                 const todayStr = new Date().toISOString().split('T')[0];
                 zip.file(`Attendance_${todayStr}.csv`, csvContent);
@@ -337,7 +334,7 @@
                     saveAs(content, `SmartAttend_Data_${todayStr}.zip`);
                 });
 
-                // CLEAR/RESET DATABASE FOR THE NEXT 20H
+                // Clear live list
                 attSnap.forEach(async (d) => {
                     await deleteDoc(doc(db, "attendance", d.id));
                 });
@@ -365,30 +362,61 @@
         window.openProjector = () => document.getElementById('projectorOverlay').classList.remove('hidden');
         window.closeProjector = () => document.getElementById('projectorOverlay').classList.add('hidden');
 
-        // --- STUDENT LOGIC ---
+        // --- STUDENT LOGIC (WITH STRICT 1-DAY COOLDOWN) ---
+        
+        function checkCooldownStatus() {
+            const todayStr = new Date().toDateString(); // e.g., "Sun Mar 08 2026"
+            const statusBox = document.getElementById('cooldownStatus');
+            
+            if (userData && userData.lastAttendanceDate === todayStr) {
+                statusBox.innerHTML = "<span class='text-emerald-500 font-bold'>✅ You are already marked present for today!</span> Check back tomorrow.";
+                document.getElementById('codeEntry').disabled = true;
+                document.getElementById('codeEntry').placeholder = "DONE";
+            } else {
+                statusBox.innerHTML = "You have <span class='text-rose-500 font-bold'>not</span> checked in today.";
+            }
+        }
+
         window.submitCode = async () => {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            const data = userSnap.data();
+            const todayStr = new Date().toDateString();
+
+            // 1. Check Strict 1-Day Cooldown from User Profile
+            if (data.lastAttendanceDate === todayStr) {
+                return showToast("1-Day Cooldown: You already checked in today!", true);
+            }
+
             const codeInput = document.getElementById('codeEntry');
             const code = codeInput.value;
             
             if(code.length !== 6) return showToast("Enter a 6-digit code", true);
 
-            // COOLDOWN LOGIC: Prevent re-submitting if they are already in the list
-            const q = query(collection(db, "attendance"), where("studentId", "==", auth.currentUser.uid));
-            const existingSnap = await getDocs(q);
-            if (!existingSnap.empty) {
-                return showToast("You have already checked in today!", true);
-            }
-
             const snap = await getDoc(doc(db, "sessions", "daily_attendance"));
             
+            // 2. Verify Code
             if (snap.exists() && snap.data().active && snap.data().code === code) {
+                
+                // Add to teacher's live list
                 await addDoc(collection(db, "attendance"), {
                     studentId: auth.currentUser.uid,
                     studentName: userData.name,
                     timestamp: serverTimestamp()
                 });
+
+                // Update the student's personal profile with today's date (Triggers Cooldown)
+                await updateDoc(userRef, {
+                    lastAttendanceDate: todayStr
+                });
+
                 showToast("Attendance Confirmed!");
                 codeInput.value = "";
+                
+                // Update local status so they see it instantly
+                userData.lastAttendanceDate = todayStr;
+                checkCooldownStatus();
+
             } else { 
                 showToast("Code rejected or session closed.", true);
                 codeInput.classList.add('border-rose-500', 'bg-rose-50');
