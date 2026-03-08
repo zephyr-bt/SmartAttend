@@ -11,21 +11,16 @@
         body { font-family: 'DM Sans', sans-serif; background-color: var(--bg-color); overflow-x: hidden; }
         h1, h2, h3, h4, .font-display { font-family: 'Outfit', sans-serif; }
         
-        /* Animated Mesh Background */
         .bg-shape { position: fixed; filter: blur(100px); z-index: -1; opacity: 0.6; animation: float 20s infinite alternate; }
         .shape1 { width: 500px; height: 500px; background: #c7d2fe; top: -100px; left: -100px; }
         .shape2 { width: 400px; height: 400px; background: #e0e7ff; bottom: -100px; right: -50px; animation-delay: -5s; }
         .shape3 { width: 600px; height: 600px; background: #fbcfe8; top: 20%; left: 30%; animation-delay: -10s; }
         @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 50px) scale(1.1); } }
 
-        /* Premium Glassmorphism */
         .glass-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05); }
-        
-        /* Custom Inputs & Glowing Text */
         .code-input { letter-spacing: 0.75em; text-indent: 0.375em; font-variant-numeric: tabular-nums; }
         .glow-text { text-shadow: 0 0 20px rgba(79, 70, 229, 0.4); }
         
-        /* Toast Notifications */
         #toast { position: fixed; bottom: 20px; right: 20px; z-index: 9999; transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
         #toast.show { transform: translateY(0); opacity: 1; }
     </style>
@@ -65,6 +60,37 @@
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/0/google.svg" width="22" alt="Google">
                     Continue with Google
                 </button>
+            </div>
+        </section>
+
+        <section id="roleView" class="hidden w-full max-w-2xl mx-auto animate-[fadeIn_0.5s_ease-out]">
+            <div class="glass-card p-10 rounded-[2.5rem] text-center">
+                <h2 class="text-3xl font-display font-black mb-2 text-slate-800">Select Your Role</h2>
+                <p class="text-slate-500 text-sm mb-10 font-medium">How will you be using SmartAttend?</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div onclick="setRole('student')" class="bg-white border-2 border-slate-100 p-8 rounded-[2rem] hover:border-indigo-500 hover:shadow-xl transition-all cursor-pointer group">
+                        <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-2xl mx-auto flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path></svg>
+                        </div>
+                        <h3 class="font-display font-bold text-xl mb-2 text-slate-800">Student</h3>
+                        <p class="text-xs text-slate-400 font-medium">Join classes and mark attendance</p>
+                    </div>
+
+                    <div id="teacherCard" onclick="showPinInput()" class="bg-white border-2 border-slate-100 p-8 rounded-[2rem] hover:border-purple-500 hover:shadow-xl transition-all cursor-pointer group">
+                        <div class="w-16 h-16 bg-purple-50 text-purple-500 rounded-2xl mx-auto flex items-center justify-center mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="font-display font-bold text-xl mb-2 text-slate-800">Teacher</h3>
+                        <p class="text-xs text-slate-400 font-medium">Create sessions and manage classes</p>
+                        
+                        <div id="pinArea" class="hidden mt-6 pt-6 border-t border-slate-100 animate-[fadeIn_0.3s_ease-out]">
+                            <p class="text-[10px] font-bold text-purple-500 uppercase tracking-widest mb-2">Staff Authorization</p>
+                            <input type="password" id="teacherPin" placeholder="Enter PIN" maxlength="6" class="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-center font-black tracking-[0.5em] outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all mb-3 text-lg" onclick="event.stopPropagation()">
+                            <button onclick="verifyTeacher(event)" class="w-full bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition-all active:scale-95 shadow-lg shadow-purple-200">Unlock Dashboard</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -113,8 +139,7 @@
                     <h3 class="font-display font-black text-xl">Live Attendance</h3>
                     <span class="bg-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full font-bold text-sm shadow-inner"><span id="liveCount">0</span> Present</span>
                 </div>
-                <div id="logContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 h-48 overflow-y-auto pr-2 content-start">
-                    </div>
+                <div id="logContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 h-48 overflow-y-auto pr-2 content-start"></div>
             </div>
         </section>
 
@@ -162,7 +187,7 @@
     </div>
 
     <div id="toast" class="glass-card px-6 py-4 rounded-2xl flex items-center gap-3 shadow-2xl border-l-4 border-l-indigo-500">
-        <div id="toastIcon" class="text-indigo-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+        <div id="toastIcon" class="text-indigo-500"></div>
         <p id="toastMsg" class="font-bold text-slate-800"></p>
     </div>
 
@@ -171,15 +196,14 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // YOUR NEW FIREBASE CREDENTIALS
+        // YOUR FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyD0icJvVAdRNXo97LKeVbD7YU5k4b-8wa0",
             authDomain: "smartattend-156f4.firebaseapp.com",
             projectId: "smartattend-156f4",
             storageBucket: "smartattend-156f4.firebasestorage.app",
             messagingSenderId: "980661379107",
-            appId: "1:980661379107:web:6159287e3d56f0fbf49196",
-            measurementId: "G-67BCWJBFQT"
+            appId: "1:980661379107:web:6159287e3d56f0fbf49196"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -190,7 +214,7 @@
         let userData = null;
         let masterInterval = null;
 
-        // Custom Toast Function (Replaces alert)
+        // Custom Toast 
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             document.getElementById('toastMsg').innerText = message;
@@ -198,20 +222,15 @@
             document.getElementById('toastIcon').innerHTML = isError 
                 ? `<svg class="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
                 : `<svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-            
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
+        // --- AUTH & ROUTING FLOW ---
         window.loginWithGoogle = async () => {
             try {
-                const res = await signInWithPopup(auth, provider);
-                const userRef = doc(db, "users", res.user.uid);
-                const snap = await getDoc(userRef);
-                if (!snap.exists()) {
-                    await setDoc(userRef, { name: res.user.displayName, email: res.user.email, role: "student" });
-                }
-                showToast(`Welcome back, ${res.user.displayName.split(' ')[0]}!`);
+                // Just trigger Google Popup. The onAuthStateChanged listener handles the rest.
+                await signInWithPopup(auth, provider);
             } catch (e) { showToast(e.message, true); }
         };
 
@@ -219,24 +238,81 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const snap = await getDoc(doc(db, "users", user.uid));
-                userData = snap.data();
-                document.getElementById('loginView').classList.add('hidden');
-                document.getElementById('navActions').classList.remove('hidden');
-                document.getElementById('userName').innerText = userData.name;
-                document.getElementById('roleBadge').innerText = userData.role;
+                const userRef = doc(db, "users", user.uid);
+                const snap = await getDoc(userRef);
+                
+                if (snap.exists()) {
+                    // USER EXISTS: Load their specific dashboard
+                    userData = snap.data();
+                    document.getElementById('loginView').classList.add('hidden');
+                    document.getElementById('roleView').classList.add('hidden');
+                    document.getElementById('navActions').classList.remove('hidden');
+                    document.getElementById('userName').innerText = userData.name;
+                    document.getElementById('roleBadge').innerText = userData.role;
 
-                if (userData.role === 'teacher') {
-                    document.getElementById('teacherView').classList.remove('hidden');
-                    initTeacher();
+                    if (userData.role === 'teacher') {
+                        document.getElementById('teacherView').classList.remove('hidden');
+                        initTeacher();
+                    } else {
+                        document.getElementById('studentView').classList.remove('hidden');
+                        initStudent(user.uid);
+                    }
                 } else {
-                    document.getElementById('studentView').classList.remove('hidden');
-                    initStudent(user.uid);
+                    // NEW USER: Show Role Selection Screen
+                    document.getElementById('loginView').classList.add('hidden');
+                    document.getElementById('roleView').classList.remove('hidden');
                 }
+            } else {
+                // Not logged in
+                document.getElementById('loginView').classList.remove('hidden');
+                document.getElementById('roleView').classList.add('hidden');
+                document.getElementById('teacherView').classList.add('hidden');
+                document.getElementById('studentView').classList.add('hidden');
+                document.getElementById('navActions').classList.add('hidden');
             }
         });
 
-        // TEACHER LOGIC
+        // --- ROLE SELECTION LOGIC ---
+        window.setRole = async (role) => {
+            if (role === 'student') {
+                await setDoc(doc(db, "users", auth.currentUser.uid), {
+                    name: auth.currentUser.displayName,
+                    email: auth.currentUser.email,
+                    role: "student",
+                    createdAt: serverTimestamp()
+                });
+                showToast("Student account created!");
+                location.reload(); // Reload to trigger the dashboard
+            }
+        };
+
+        window.showPinInput = () => {
+            document.getElementById('pinArea').classList.remove('hidden');
+            document.getElementById('teacherPin').focus();
+        };
+
+        window.verifyTeacher = async (e) => {
+            e.stopPropagation(); // Prevents clicking the card again
+            const pin = document.getElementById('teacherPin').value;
+            
+            if (pin === "431298") { // SECURE TEACHER PIN
+                await setDoc(doc(db, "users", auth.currentUser.uid), {
+                    name: auth.currentUser.displayName,
+                    email: auth.currentUser.email,
+                    role: "teacher",
+                    createdAt: serverTimestamp()
+                });
+                showToast("Authorization Successful!");
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast("Invalid Authorization PIN!", true);
+                document.getElementById('teacherPin').value = "";
+                document.getElementById('teacherPin').classList.add('border-rose-500');
+                setTimeout(() => document.getElementById('teacherPin').classList.remove('border-rose-500'), 1000);
+            }
+        };
+
+        // --- TEACHER LOGIC ---
         window.handleSession = async () => {
             const subjectId = document.getElementById('subjectSelect').value;
             const btn = document.getElementById('sessionToggle');
@@ -300,7 +376,7 @@
         window.openProjector = () => document.getElementById('projectorOverlay').classList.remove('hidden');
         window.closeProjector = () => document.getElementById('projectorOverlay').classList.add('hidden');
 
-        // STUDENT LOGIC
+        // --- STUDENT LOGIC ---
         window.submitCode = async () => {
             const subjectId = document.getElementById('studentSubjectSelect').value;
             const codeInput = document.getElementById('codeEntry');
